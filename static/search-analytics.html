@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangla SOC</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .field-select {
+            min-width: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            margin-right: 0.5rem;
+        }
+        
+        .field-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        .field-select optgroup {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .field-select option {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .search-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .search-input-group {
+                flex-direction: column;
+            }
+            
+            .field-select {
+                min-width: 100%;
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo-section">
+                <img src="https://raw.githubusercontent.com/d-x3n0n/bs_soc/refs/heads/main/bs_soc_image.png" alt="Bangla SOC" width="104" height="80"> 
+                <div>
+                    <div class="logo-text">SKULL</div>
+                    <div class="logo-subtitle">
+                        A SOC Platform by <span class="brand-name">Prime Net Limited</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navbar-controls">
+                <div class="system-status">
+                    <span class="status-indicator active"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+                <div class="last-update" id="lastUpdate">
+                    <i class="fas fa-clock"></i>
+                    <span>Loading...</span>
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-container">
+        <div class="nav-tabs">
+            <a href="/" class="nav-tab">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>
+            <a href="/search-analytics" class="nav-tab active">
+                <i class="fas fa-search"></i>
+                Search & Analytics
+            </a>
+            <a href="/fim" class="nav-tab">
+                <i class="fas fa-lock"></i>
+                FIM
+            </a>
+            <a href="/uba" class="nav-tab">
+                <i class="fas fa-user-shield"></i>
+                UBA
+            </a>
+            <a href="/threat-intel" class="nav-tab">
+                <i class="fas fa-brain"></i>
+                IoC
+            </a>
+            <a href="/vulnerability-discovery" class="nav-tab">
+                <i class="fas fa-shield-virus"></i>
+                Vulnerability Discovery
+            </a>
+            <a href="/case-management" class="nav-tab">
+                <i class="fas fa-tasks"></i>
+                Case Management
+            </a>
+            <a href="https://10.10.192.205:3443/" target="_blank" class="nav-tab">
+                <i class="fas fa-robot"></i>
+                SOAR
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Search Header -->
+        <div class="search-header">
+            <h1><i class="fas fa-search"></i> Advanced Search & Analytics</h1>
+            <p>Search through security events with field selector</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-section glass-effect">
+            <div class="search-bar-container">
+                <div class="search-input-group">
+                    <!-- Field Selector -->
+                    <select id="fieldSelector" class="field-select">
+                        <option value="">Select Field...</option>
+                        <optgroup label="Basic Fields">
+                            <option value="agent.name">Agent Name</option>
+                            <option value="agent.id">Agent ID</option>
+                            <option value="agent.ip">Agent IP</option>
+                            <option value="manager.name">Manager Name</option>
+                            <option value="rule.level">Severity Level</option>
+                            <option value="rule.description">Rule Description</option>
+                            <option value="rule.id">Rule ID</option>
+                            <option value="location">Location</option>
+                        </optgroup>
+                        <optgroup label="MITRE ATT&CK">
+                            <option value="rule.mitre.tactic">MITRE Tactic</option>
+                            <option value="rule.mitre.technique">MITRE Technique</option>
+                            <option value="rule.mitre.id">MITRE Technique ID</option>
+                        </optgroup>
+                        <optgroup label="File Integrity (FIM)">
+                            <option value="syscheck.event">FIM Event Type</option>
+                            <option value="syscheck.path">File/Registry Path</option>
+                            <option value="syscheck.value_name">Registry Value Name</option>
+                            <option value="syscheck.mode">FIM Check Mode</option>
+                        </optgroup>
+                        <optgroup label="Windows Events">
+                            <option value="data.win.system.eventID">Windows Event ID</option>
+                            <option value="data.win.eventdata.image">Process Image</option>
+                            <option value="data.win.eventdata.commandLine">Command Line</option>
+                            <option value="data.win.eventdata.parentImage">Parent Process</option>
+                        </optgroup>
+                        <optgroup label="Network & Authentication">
+                            <option value="data.srcip">Source IP</option>
+                            <option value="data.srcport">Source Port</option>
+                            <option value="data.srcuser">Source User</option>
+                            <option value="data.dstuser">Destination User</option>
+                        </optgroup>
+                        <optgroup label="Compliance">
+                            <option value="rule.pci_dss">PCI DSS</option>
+                            <option value="rule.hipaa">HIPAA</option>
+                            <option value="rule.gdpr">GDPR</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="decoder.name">Decoder Name</option>
+                            <option value="full_log">Full Log Message</option>
+                        </optgroup>
+                    </select>
+
+                    <input type="text" id="searchQuery" placeholder="Enter search keyword..." class="search-input">
+
+                    <button class="btn btn-primary" id="searchButton">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                    <button class="btn btn-outline" id="clearButton">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
+
+        
+        <!-- Advanced Filters Section -->
+        <div class="filters-section glass-effect">
+            <div class="section-header">
+                <h3><i class="fas fa-filter"></i> Advanced Filters</h3>
+                <button class="btn btn-outline" id="addFilterBtn">
+                    <i class="fas fa-plus"></i>
+            	    Add Filter
+        	</button>
+    	    </div>
+    
+    	    <div class="filters-container" id="filtersContainer">
+                <!-- Filters will be added here dynamically -->
+        	<div class="filter-row" data-filter-id="1">
+            	    <div class="filter-field-group">
+                	<label class="control-label">Field</label>
+                	<select class="control-select filter-field">
+                    	    <option value="">Select Field...</option>
+                    	    <optgroup label="Basic Fields">
+                                <option value="agent.name">Agent Name</option>
+                        	<option value="agent.id">Agent ID</option>
+                        	<option value="agent.ip">Agent IP</option>
+                        	<option value="rule.level">Severity Level</option>
+                        	<option value="rule.description">Rule Description</option>
+                    	    </optgroup>
+                    	    <optgroup label="MITRE ATT&CK">
+                        	<option value="rule.mitre.tactic">MITRE Tactic</option>
+                        	<option value="rule.mitre.id">MITRE Technique ID</option>
+                    	    </optgroup>
+                    	    <optgroup label="File Integrity">
+                        	<option value="syscheck.event">FIM Event Type</option>
+                        	<option value="syscheck.path">File Path</option>
+                    	    </optgroup>
+                	</select>
+            	    </div>
+            
+                    <div class="filter-operator-group">
+                        <label class="control-label">Operator</label>
+                	<select class="control-select filter-operator">
+                    	    <option value="equals">Equals</option>
+                    	    <option value="contains">Contains</option>
+                    	    <option value="starts_with">Starts With</option>
+                    	    <option value="ends_with">Ends With</option>
+                    	    <option value="greater_than">Greater Than</option>
+                    	    <option value="less_than">Less Than</option>
+                    	    <option value="exists">Exists</option>
+                    	    <option value="not_exists">Not Exists</option>
+                	</select>
+            	    </div>
+            
+            	    <div class="filter-value-group">
+                	<label class="control-label">Value</label>
+                	<input type="text" class="control-input filter-value" placeholder="Enter value...">
+            	    </div>
+            
+            	    <div class="filter-actions">
+                	<button class="btn btn-danger filter-remove" title="Remove Filter">
+                    	    <i class="fas fa-times"></i>
+                	</button>
+            	    </div>
+        	</div>
+    	    </div>
+    
+    	    <div class="filters-actions">
+        	<button class="btn btn-primary" id="applyFiltersBtn">
+            	    <i class="fas fa-filter"></i>
+            	    Apply Filters
+        	</button>
+        	<button class="btn btn-outline" id="clearFiltersBtn">
+            	    <i class="fas fa-broom"></i>
+            	    Clear All
+        	</button>
+        	<div class="active-filters" id="activeFilters">
+            	    <!-- Active filters will be shown here -->
+        	</div>
+    	    </div>
+	</div>    
+                    
+                </div>
+                
+                <div class="search-actions">
+                    <button class="btn btn-outline" id="savedSearchesButton">
+                        <i class="fas fa-bookmark"></i>
+                        Saved Searches
+                    </button>
+                    <button class="btn btn-outline" onclick="showSearchHelp()">
+                        <i class="fas fa-question-circle"></i>
+                        Help
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Filters -->
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label class="control-label">Time Range</label>
+                    <select id="timeRangeFilter" class="control-select">
+                        <option value="15m">Last 15 minutes</option>
+                        <option value="1h">Last 1 hour</option>
+                        <option value="24h" selected>Last 24 hours</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" id="customDateRange" style="display: none;">
+                    <label class="control-label">From</label>
+                    <input type="datetime-local" id="startDate" class="control-input">
+                    <label class="control-label">To</label>
+                    <input type="datetime-local" id="endDate" class="control-input">
+                </div>
+
+                <div class="filter-group">
+                    <label class="control-label">Results</label>
+                    <select id="resultSize" class="control-select">
+                        <option value="50">50 results</option>
+                        <option value="100" selected>100 results</option>
+                        <option value="500">500 results</option>
+                        <option value="1000">1000 results</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="results-summary" id="resultsSummary" style="display: none;">
+            <div class="summary-card glass-effect">
+                <div class="card-header">
+                    <div class="card-label">Total Results</div>
+                    <div class="card-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="totalResults">0</div>
+                <div class="card-meta" id="searchTime">Search took 0ms</div>
+            </div>
+            
+            <div class="summary-card glass-effect">
+                <div class="card-header">
+                    <div class="card-label">High Severity</div>
+                    <div class="card-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="highSeverityAlerts">0</div>
+                <div class="card-meta">Alerts ≥ Level 10</div>
+            </div>
+
+            <div class="summary-card glass-effect">
+                <div class="card-header">
+                    <div class="card-label">Unique Agents</div>
+                    <div class="card-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="uniqueAgents">0</div>
+                <div class="card-meta">Active agents</div>
+            </div>
+
+            <div class="summary-card glass-effect">
+                <div class="card-header">
+                    <div class="card-label">MITRE Tactics</div>
+                    <div class="card-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="mitreTactics">0</div>
+                <div class="card-meta">Unique tactics</div>
+            </div>
+        </div>
+
+        <!-- Additional Filters -->
+        <div class="controls-section glass-effect" style="display: none;" id="additionalFilters">
+            <div class="control-group">
+                <label class="control-label">Severity Filter</label>
+                <select class="control-select" id="severityFilter">
+                    <option value="">All Severities</option>
+                    <option value="12">Critical (12-15)</option>
+                    <option value="10">High (10-11)</option>
+                    <option value="7">Medium (7-9)</option>
+                    <option value="4">Low (4-6)</option>
+                    <option value="1">Info (1-3)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Agent Filter</label>
+                <select class="control-select" id="agentFilter">
+                    <option value="">All Agents</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn btn-outline" id="applyFiltersBtn" style="margin-top: 1.75rem;">
+                    <i class="fas fa-filter"></i>
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Search Examples -->
+        <div class="chart-container glass-effect" id="quickSearchExamples">
+            <div class="chart-header">
+                <h3 class="chart-title">Quick Search Examples</h3>
+                <div class="chart-actions">
+                    <button class="chart-action-btn" title="Help" onclick="showSearchHelp()">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="example-queries">
+                    <div class="example-query" onclick="loadExample('rule.level:>=10')">
+                        <div class="query-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="query-content">
+                            <code>rule.level:>=10</code>
+                            <span>High severity alerts</span>
+                        </div>
+                    </div>
+                    <div class="example-query" onclick="loadExample('rule.description:\"failed login\"')">
+                        <div class="query-icon">
+                            <i class="fas fa-user-lock"></i>
+                        </div>
+                        <div class="query-content">
+                            <code>rule.description:"failed login"</code>
+                            <span>Failed login attempts</span>
+                        </div>
+                    </div>
+                    <div class="example-query" onclick="loadExample('agent.name:web-server* AND rule.level:>5')">
+                        <div class="query-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <div class="query-content">
+                            <code>agent.name:web-server* AND rule.level:>5</code>
+                            <span>Web server alerts</span>
+                        </div>
+                    </div>
+                    <div class="example-query" onclick="loadExample('syscheck.event:*')">
+                        <div class="query-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="query-content">
+                            <code>syscheck.event:*</code>
+                            <span>File integrity events</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div class="alerts-section glass-effect" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i> Search Results
+                    <span class="results-count" id="resultsCount">(0 results)</span>
+                </div>
+                <div class="section-actions">
+                    <button class="btn btn-outline" id="exportResultsBtn">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <button class="btn btn-outline" id="autoRefreshBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        <span id="autoRefreshText">Auto Refresh: Off</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="alerts-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th data-sort="timestamp">Timestamp</th>
+                            <th data-sort="severity">Severity</th>
+                            <th data-sort="agent_name">Agent</th>
+                            <th data-sort="rule_description">Description</th>
+                            <th data-sort="rule_id">Rule ID</th>
+                            <th data-sort="location">Location</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="searchResultsBody">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="paginationSection">
+                <div class="pagination-info" id="paginationInfo">Showing 0 results</div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="firstPage" disabled>
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="pagination-btn" id="prevPage" disabled>
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <span class="pagination-pages" id="pageNumbers"></span>
+                    <button class="pagination-btn" id="nextPage" disabled>
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="pagination-btn" id="lastPage" disabled>
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3>Ready to Search</h3>
+            <p>Select a field and enter a value to start searching security events.</p>
+            <div class="query-examples">
+                <h4>Try these examples:</h4>
+                <div class="example-queries">
+                    <div class="example-query" onclick="loadExample('rule.level:>=10')">
+                        <code>rule.level:>=10</code>
+                        <span>High severity alerts</span>
+                    </div>
+                    <div class="example-query" onclick="loadExample('rule.description:\"failed login\"')">
+                        <code>rule.description:"failed login"</code>
+                        <span>Failed login attempts</span>
+                    </div>
+                    <div class="example-query" onclick="loadExample('agent.name:web-server* AND rule.level:>5')">
+                        <code>agent.name:web-server* AND rule.level:>5</code>
+                        <span>Web server alerts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Searching OpenSearch...</div>
+    </div>
+
+    <!-- Alert Detail Modal -->
+    <div class="modal-overlay hidden" id="alertModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Alert Details</h3>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Alert details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Searches Modal -->
+    <div class="modal-overlay hidden" id="savedSearchesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Saved Searches</h3>
+                <button class="modal-close" id="closeSavedSearchesModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="savedSearchesList">
+                    <!-- Saved searches will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Help Modal -->
+    <div class="modal-overlay hidden" id="searchHelpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Search Query Help</h3>
+                <button class="modal-close" id="closeSearchHelpModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h4>How to Search</h4>
+                    <div class="help-content">
+                        <p>1. Select a field from the dropdown</p>
+                        <p>2. Enter the value you want to search for</p>
+                        <p>3. Click Search or press Enter</p>
+                    </div>
+                </div>
+                
+                <div class="help-section">
+                    <h4>Field Selector</h4>
+                    <div class="help-content">
+                        <p>The field selector organizes available search fields by category:</p>
+                        <ul>
+                            <li><strong>Basic Fields</strong>: Agent info, rule details, locations</li>
+                            <li><strong>MITRE ATT&CK</strong>: Attack tactics and techniques</li>
+                            <li><strong>File Integrity (FIM)</strong>: File and registry monitoring</li>
+                            <li><strong>Windows Events</strong>: Windows security events</li>
+                            <li><strong>Network & Authentication</strong>: Network and user activity</li>
+                            <li><strong>Compliance</strong>: Regulatory frameworks</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-section">
+                    <h4>Search Tips</h4>
+                    <div class="help-content">
+                        <ul>
+                            <li>Use <code>*</code> for wildcard searches: <code>agent.name:web*</code></li>
+                            <li>Use quotes for exact phrases: <code>rule.description:"failed login"</code></li>
+                            <li>Combine fields with AND/OR: <code>rule.level:>10 AND agent.name:web-server</code></li>
+                            <li>Use comparison operators: <code>rule.level:>=10</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/search-analytics.js"></script>
+</body>
+</html>

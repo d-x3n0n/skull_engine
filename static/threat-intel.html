@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangla SOC</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .threat-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .threat-tab {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .threat-tab.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .threat-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .threat-content {
+            display: none;
+        }
+        
+        .threat-content.active {
+            display: block;
+        }
+        
+        .ioc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+        
+        .misp-event {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .threat-category {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .threat-type {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .feed-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .feed-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .feed-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .feed-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .feed-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .feed-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .feed-tag {
+            padding: 0.3rem 0.6rem;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            color: var(--text-primary);
+        }
+        
+        .feed-iocs {
+            margin-top: 1rem;
+        }
+        
+        .ioc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .ioc-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-sm);
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        
+        .threat-intel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo-section">
+                <img src="https://raw.githubusercontent.com/d-x3n0n/bs_soc/refs/heads/main/bs_soc_image.png" alt="Bangla SOC" width="104" height="80"> 
+                <div>
+                    <div class="logo-text">SKULL</div>
+                    <div class="logo-subtitle">
+                        A SOC Platform by <span class="brand-name">Prime Net Limited</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navbar-controls">
+                <div class="system-status">
+                    <span class="status-indicator active"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+                <div class="last-update" id="lastUpdate">
+                    <i class="fas fa-clock"></i>
+                    <span>Loading...</span>
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-container">
+        <div class="nav-tabs">
+            <a href="/" class="nav-tab">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>
+            <a href="/search-analytics" class="nav-tab">
+                <i class="fas fa-search"></i>
+                Search & Analytics
+            </a>
+            <a href="/fim" class="nav-tab">
+                <i class="fas fa-lock"></i>
+                FIM
+            </a>
+            <a href="/uba" class="nav-tab">
+                <i class="fas fa-user-shield"></i>
+                UBA
+            </a>
+            <a href="/threat-intel" class="nav-tab active">
+                <i class="fas fa-brain"></i>
+                IoC
+            </a>
+            <a href="/vulnerability-discovery" class="nav-tab">
+                <i class="fas fa-shield-virus"></i>
+                Vulnerability Discovery
+            </a>
+            <a href="/case-management" class="nav-tab">
+                <i class="fas fa-tasks"></i>
+                Case Management
+            </a>
+            <a href="https://10.10.192.205:3443/" target="_blank" class="nav-tab">
+                <i class="fas fa-robot"></i>
+                SOAR
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-brain"></i> Threat Intelligence</h1>
+            <p>MISP threat feeds and real-time IoC detection alerts</p>
+        </div>
+
+        <!-- Threat Intel Tabs -->
+        <div class="threat-tabs">
+            <button class="threat-tab active" data-tab="alerts">
+                <i class="fas fa-radar-dish"></i>
+                IoC Alerts
+                <span class="badge" id="alertsBadge">0</span>
+            </button>
+            <button class="threat-tab" data-tab="feeds">
+                <i class="fas fa-rss"></i>
+                IoC Feeds
+                <span class="badge" id="feedsBadge">0</span>
+            </button>
+        </div>
+
+        <!-- Threat Alerts Content -->
+        <div class="threat-content active" id="alertsContent">
+            <!-- Summary Cards -->
+            <div class="threat-intel-grid">
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Total IoC Alerts</div>
+                        <div class="card-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="totalAlerts">0</div>
+                    <div class="card-meta">Last 24 hours</div>
+                </div>
+                
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Critical Alerts</div>
+                        <div class="card-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="criticalAlerts">0</div>
+                    <div class="card-meta">Level 12+</div>
+                </div>
+
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Unique IoCs</div>
+                        <div class="card-icon">
+                            <i class="fas fa-fingerprint"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="uniqueIocs">0</div>
+                    <div class="card-meta">Different indicators</div>
+                </div>
+
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Affected Agents</div>
+                        <div class="card-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="affectedAgents">0</div>
+                    <div class="card-meta">Compromised systems</div>
+                </div>
+            </div>
+
+            <!-- Alerts Table -->
+            <div class="alerts-section glass-effect">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-list"></i> Threat Intelligence Alerts
+                        <span class="results-count" id="alertsResultsCount">(0 alerts)</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="btn btn-outline" id="exportAlertsBtn">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                        <button class="btn btn-outline" id="alertsAutoRefreshBtn">
+                            <i class="fas fa-sync-alt"></i>
+                            <span id="alertsAutoRefreshText">Auto Refresh: Off</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="alerts-table" id="alertsTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="timestamp">Timestamp</th>
+                                <th data-sort="severity">Severity</th>
+                                <th data-sort="agent">Agent</th>
+                                <th data-sort="ioc_value">IoC Value</th>
+                                <th data-sort="ioc_type">IoC Type</th>
+                                <th data-sort="category">Category</th>
+                                <th data-sort="event_id">MISP Event</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody">
+                            <!-- Alerts will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="alertsPaginationSection">
+                    <div class="pagination-info" id="alertsPaginationInfo">Showing 0 alerts</div>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" id="alertsFirstPage" disabled>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button class="pagination-btn" id="alertsPrevPage" disabled>
+                            <i class="fas fa-angle-left"></i>
+                        </button>
+                        <span class="pagination-pages" id="alertsPageNumbers"></span>
+                        <button class="pagination-btn" id="alertsNextPage" disabled>
+                            <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button class="pagination-btn" id="alertsLastPage" disabled>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Alerts Message -->
+            <div class="empty-state" id="alertsEmptyState">
+                <div class="empty-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>No Threat Intel Alerts Found</h3>
+                <p>No MISP IoC matches detected in the selected time range.</p>
+                <div class="query-examples">
+                    <h4>Common IoC Types to Monitor:</h4>
+                    <div class="example-queries">
+                        <div class="example-query">
+                            <code>Malicious Domains</code>
+                            <span>Command & Control servers</span>
+                        </div>
+                        <div class="example-query">
+                            <code>Suspicious IPs</code>
+                            <span>Known malicious IP addresses</span>
+                        </div>
+                        <div class="example-query">
+                            <code>File Hashes</code>
+                            <span>Malware signatures</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Threat Feeds Content -->
+        <div class="threat-content" id="feedsContent">
+            <!-- Feeds Summary - FIXED: Using same structure as alerts -->
+            <div class="threat-intel-grid">
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Total Events</div>
+                        <div class="card-icon">
+                            <i class="fas fa-rss"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="totalEvents">0</div>
+                    <div class="card-meta">MISP Events</div>
+                </div>
+                
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Total Attributes</div>
+                        <div class="card-icon">
+                            <i class="fas fa-fingerprint"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="totalAttributes">0</div>
+                    <div class="card-meta">IoC Indicators</div>
+                </div>
+
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Unique Tags</div>
+                        <div class="card-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="uniqueTags">0</div>
+                    <div class="card-meta">Different tags</div>
+                </div>
+
+                <div class="summary-card glass-effect">
+                    <div class="card-header">
+                        <div class="card-label">Last 7 Days</div>
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                    </div>
+                    <div class="card-value" id="last7Days">0</div>
+                    <div class="card-meta">Recent events</div>
+                </div>
+            </div>
+
+            <!-- Feeds Grid -->
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-rss"></i> MISP Threat Feeds
+                    <span class="results-count" id="feedsResultsCount">(0 events)</span>
+                </div>
+                <div class="section-actions">
+                    <button class="btn btn-outline" id="exportFeedsBtn">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <button class="btn btn-outline" id="feedsAutoRefreshBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        <span id="feedsAutoRefreshText">Auto Refresh: Off</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="feeds-grid" id="feedsGrid">
+                <!-- Feed cards will be populated here -->
+            </div>
+
+            <!-- No Feeds Message -->
+            <div class="empty-state" id="feedsEmptyState">
+                <div class="empty-icon">
+                    <i class="fas fa-rss"></i>
+                </div>
+                <h3>No Threat Feeds Found</h3>
+                <p>No MISP events found matching your criteria.</p>
+                <div class="query-examples">
+                    <h4>Try adjusting your filters:</h4>
+                    <div class="example-queries">
+                        <div class="example-query">
+                            <code>Change time range</code>
+                            <span>Show events from last 7 days</span>
+                        </div>
+                        <div class="example-query">
+                            <code>Clear search terms</code>
+                            <span>Remove any search filters</span>
+                        </div>
+                        <div class="example-query">
+                            <code>Check MISP connection</code>
+                            <span>Verify API connectivity</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feeds Pagination -->
+            <div class="pagination" id="feedsPaginationSection">
+                <div class="pagination-info" id="feedsPaginationInfo">Showing 0 events</div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="feedsFirstPage" disabled>
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="pagination-btn" id="feedsPrevPage" disabled>
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <span class="pagination-pages" id="feedsPageNumbers"></span>
+                    <button class="pagination-btn" id="feedsNextPage" disabled>
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="pagination-btn" id="feedsLastPage" disabled>
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Loading Threat Intelligence...</div>
+    </div>
+
+    <!-- Alert Detail Modal -->
+    <div class="modal-overlay hidden" id="alertModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Threat Intel Alert Details</h3>
+                <button class="modal-close" id="closeAlertModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="alertModalContent">
+                <!-- Alert details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Feed Detail Modal -->
+    <div class="modal-overlay hidden" id="feedModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">MISP Event Details</h3>
+                <button class="modal-close" id="closeFeedModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="feedModalContent">
+                <!-- Feed details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/threat-intel.js"></script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangla SOC</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo-section">
+                <img src="https://raw.githubusercontent.com/d-x3n0n/bs_soc/refs/heads/main/bs_soc_image.png" alt="Bangla SOC" width="104" height="80"> 
+                <div>
+                    <div class="logo-text">SKULL</div>
+                    <div class="logo-subtitle">
+                        A SOC Platform by <span class="brand-name">Prime Net Limited</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navbar-controls">
+                <div class="system-status">
+                    <span class="status-indicator active" id="irisStatus"></span>
+                    <span class="status-text" id="irisStatusText">Checking IRIS...</span>
+                </div>
+                <div class="last-update" id="lastUpdate">
+                    <i class="fas fa-clock"></i>
+                    <span>Loading...</span>
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-success" id="newCaseBtn">
+                    <i class="fas fa-plus"></i>
+                    New Case
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-container">
+        <div class="nav-tabs">
+            <a href="/" class="nav-tab">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>
+            <a href="/search-analytics" class="nav-tab">
+                <i class="fas fa-search"></i>
+                Search & Analytics
+            </a>
+            <a href="/fim" class="nav-tab">
+                <i class="fas fa-lock"></i>
+                FIM
+            </a>
+            <a href="/uba" class="nav-tab">
+                <i class="fas fa-user-shield"></i>
+                UBA
+            </a>
+            <a href="/threat-intel" class="nav-tab">
+                <i class="fas fa-brain"></i>
+                IoC
+            </a>
+            <a href="/vulnerability-discovery" class="nav-tab">
+                <i class="fas fa-shield-virus"></i>
+                Vulnerability Discovery
+            </a>
+            <a href="/case-management" class="nav-tab active">
+                <i class="fas fa-tasks"></i>
+                Case Management
+            </a>
+            <a href="https://10.10.192.205:3443/" target="_blank" class="nav-tab">
+                <i class="fas fa-robot"></i>
+                SOAR
+            </a>
+        </div>
+    </div>
+     
+    <!-- Main Dashboard -->
+    <div class="container">
+        <!-- Summary Metrics -->
+        <div class="summary-grid">
+            <div class="summary-card total glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-folder-open card-icon"></i>
+                    <span class="card-trend" id="totalTrend">+0%</span>
+                </div>
+                <div class="card-value" id="totalCases">0</div>
+                <div class="card-label">Total Cases</div>
+            </div>
+            
+            <div class="summary-card critical glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-exclamation-triangle card-icon"></i>
+                    <span class="card-trend" id="openTrend">+0%</span>
+                </div>
+                <div class="card-value" id="openCases">0</div>
+                <div class="card-label">Open Cases</div>
+            </div>
+            
+            <div class="summary-card high glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-check-circle card-icon"></i>
+                    <span class="card-trend" id="closedTrend">+0%</span>
+                </div>
+                <div class="card-value" id="closedCases">0</div>
+                <div class="card-label">Closed Cases</div>
+            </div>
+            
+            <div class="summary-card agents glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-user-shield card-icon"></i>
+                    <span class="card-trend" id="activeTrend">+0%</span>
+                </div>
+                <div class="card-value" id="activeInvestigations">0</div>
+                <div class="card-label">Active Investigations</div>
+            </div>
+            
+            <div class="summary-card mitre glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-chart-line card-icon"></i>
+                    <span class="card-trend" id="resolutionTrend">+0%</span>
+                </div>
+                <div class="card-value" id="avgResolution">0h</div>
+                <div class="card-label">Avg Resolution</div>
+            </div>
+            
+            <div class="summary-card threats glass-effect">
+                <div class="card-header">
+                    <i class="fas fa-arrow-up card-icon"></i>
+                    <span class="card-trend" id="escalatedTrend">+0%</span>
+                </div>
+                <div class="card-value" id="escalatedCases">0</div>
+                <div class="card-label">Escalated Cases</div>
+            </div>
+        </div>
+
+        <!-- Controls & Filters -->
+        <div class="controls-section">
+            <div class="control-group">
+                <label class="control-label">Case Status</label>
+                <select class="control-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="investigating">Investigating</option>
+                    <option value="closed">Closed</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Severity</label>
+                <select class="control-select" id="severityFilter">
+                    <option value="">All Severities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            
+            <div class="control-group" style="flex: 1;">
+                <label class="control-label">Search Cases</label>
+                <input type="text" class="control-input" id="searchInput" placeholder="Search by case name, ID, description...">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Analyst</label>
+                <select class="control-select" id="analystFilter">
+                    <option value="">All Analysts</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Sort By</label>
+                <select class="control-select" id="sortFilter">
+                    <option value="date_desc">Newest First</option>
+                    <option value="date_asc">Oldest First</option>
+                    <option value="severity_desc">High Severity First</option>
+                    <option value="severity_asc">Low Severity First</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Case Status Distribution -->
+            <div class="chart-container glass-effect">
+                <div class="chart-header">
+                    <h3 class="chart-title">Case Status Distribution</h3>
+                    <div class="chart-actions">
+                        <button class="chart-action-btn" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Severity Distribution -->
+            <div class="chart-container glass-effect">
+                <div class="chart-header">
+                    <h3 class="chart-title">Case Severity Distribution</h3>
+                    <div class="chart-actions">
+                        <button class="chart-action-btn" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Analyst Workload -->
+            <div class="chart-container glass-effect">
+                <div class="chart-header">
+                    <h3 class="chart-title">Analyst Workload</h3>
+                    <div class="chart-actions">
+                        <button class="chart-action-btn" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="workloadChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Cases Timeline -->
+            <div class="chart-container glass-effect">
+                <div class="chart-header">
+                    <h3 class="chart-title">Cases Timeline (Last 7 Days)</h3>
+                    <div class="chart-actions">
+                        <button class="chart-action-btn" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Cases -->
+        <div class="chart-container glass-effect" style="grid-column: 1 / -1;margin-bottom: 20px;">
+            <div class="chart-header">
+                <h3 class="chart-title">Recent Cases</h3>
+                <div class="chart-actions">
+                    <button class="chart-action-btn" title="Refresh" id="refreshRecent">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <div id="recentCases" class="recent-cases-list">
+                    <!-- Recent cases will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cases Table Section -->
+        <div class="alerts-section glass-effect">
+            <div class="section-header">
+                <h3 class="section-title">All Cases</h3>
+                <div class="section-actions">
+                    <div class="pagination-info" id="paginationInfo">
+                        Showing 0 of 0 cases
+                    </div>
+                    <button class="btn btn-outline" id="exportBtn">
+                        <i class="fas fa-file-export"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="alerts-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="case_id">Case ID</th>
+                            <th data-sort="case_name">Case Name</th>
+                            <th data-sort="case_status">Status</th>
+                            <th data-sort="case_severity">Severity</th>
+                            <th data-sort="user_name">Assigned To</th>
+                            <th data-sort="case_open_date">Open Date</th>
+                            <th data-sort="case_close_date">Close Date</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="casesTableBody">
+                        <!-- Cases will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <div class="pagination-info" id="tablePaginationInfo">
+                    Page 1 of 1
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="firstPage" disabled>
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="pagination-btn" id="prevPage" disabled>
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <span class="pagination-pages" id="pageNumbers"></span>
+                    <button class="pagination-btn" id="nextPage" disabled>
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="pagination-btn" id="lastPage" disabled>
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Case Management Data...</div>
+    </div>
+
+    <!-- Case Detail Modal -->
+    <div class="modal-overlay hidden" id="caseModal">
+        <div class="modal-content" style="max-width: 90%; max-height: 90%;">
+            <div class="modal-header">
+                <h3 class="modal-title">Case Details</h3>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalContent" style="overflow-y: auto;">
+                <!-- Case details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- New Case Modal -->
+    <div class="modal-overlay hidden" id="newCaseModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Case</h3>
+                <button class="modal-close" id="closeNewCaseModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newCaseForm">
+                    <div class="form-group">
+                        <label class="form-label">Case Name *</label>
+                        <input type="text" class="form-control" id="caseName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="caseDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Severity *</label>
+                            <select class="form-control" id="caseSeverity" required>
+                                <option value="1">Low</option>
+                                <option value="2">Medium</option>
+                                <option value="3">High</option>
+                                <option value="4">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status *</label>
+                            <select class="form-control" id="caseStatus" required>
+                                <option value="open">Open</option>
+                                <option value="investigating">Investigating</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Assigned To</label>
+                        <input type="text" class="form-control" id="caseAssignee" placeholder="Analyst name">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancelNewCase">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Case</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/case-management.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Wazuh Configuration
+WAZUH_HOST=10.10.192.205
+WAZUH_USERNAME=admin
+WAZUH_PASSWORD=B***siem1
+WAZUH_VERIFY_SSL=false
+
+# Flask Configuration
+FLASK_HOST=0.0.0.0
+FLASK_PORT=9999
+FLASK_DEBUG=false
